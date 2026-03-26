@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hadith Search — بحث الحديث</title>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;0,700;1,400&family=Amiri:ital,wght@0,400;0,700;1,400&family=Source+Sans+3:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0d0f;
+    --bg2: #131316;
+    --bg3: #1a1a20;
+    --card: #18181e;
+    --border: #2a2a35;
+    --gold: #c9a84c;
+    --gold2: #e8c96a;
+    --gold-dim: rgba(201,168,76,0.15);
+    --text: #e8e4d8;
+    --text-dim: #8a8578;
+    --green: #4a9e6e;
+    --red: #c05050;
+    --arabic-font: 'Amiri', serif;
+    --serif: 'Lora', Georgia, serif;
+    --sans: 'Source Sans 3', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Geometric background pattern */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      repeating-linear-gradient(45deg, transparent, transparent 40px, rgba(201,168,76,0.015) 40px, rgba(201,168,76,0.015) 41px),
+      repeating-linear-gradient(-45deg, transparent, transparent 40px, rgba(201,168,76,0.015) 40px, rgba(201,168,76,0.015) 41px);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+  }
+
+  /* Header */
+  .header {
+    text-align: center;
+    margin-bottom: 48px;
+    animation: fadeDown 0.7s ease both;
+  }
+
+  .header-icon {
+    font-size: 32px;
+    margin-bottom: 12px;
+    opacity: 0.8;
+  }
+
+  .header h1 {
+    font-family: var(--serif);
+    font-size: clamp(24px, 5vw, 36px);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--gold2);
+    line-height: 1.1;
+  }
+
+  .header-arabic {
+    font-family: var(--arabic-font);
+    font-size: clamp(20px, 4vw, 28px);
+    color: var(--gold);
+    display: block;
+    margin-top: 6px;
+    opacity: 0.85;
+  }
+
+  .header p {
+    margin-top: 14px;
+    color: var(--text-dim);
+    font-size: 14px;
+    font-weight: 300;
+    line-height: 1.6;
+  }
+
+  .gold-line {
+    width: 60px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    margin: 16px auto;
+  }
+
+  /* Search Panel */
+  .search-panel {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 28px;
+    animation: fadeUp 0.7s ease 0.1s both;
+  }
+
+  .tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+    background: var(--bg);
+    border-radius: 8px;
+    padding: 4px;
+  }
+
+  .tab {
+    flex: 1;
+    padding: 10px 16px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-dim);
+    font-family: var(--sans);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.02em;
+  }
+
+  .tab.active {
+    background: var(--gold-dim);
+    color: var(--gold2);
+    border: 1px solid rgba(201,168,76,0.3);
+  }
+
+  .tab:hover:not(.active) { color: var(--text); background: var(--bg2); }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
+
+  /* Form elements */
+  label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 7px;
+  }
+
+  select, input[type="text"], input[type="number"] {
+    width: 100%;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 11px 14px;
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 15px;
+    outline: none;
+    transition: border-color 0.2s;
+    appearance: none;
+  }
+
+  select:focus, input:focus {
+    border-color: var(--gold);
+    box-shadow: 0 0 0 3px rgba(201,168,76,0.1);
+  }
+
+  select option { background: #1a1a20; }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .form-row.triple { grid-template-columns: 1fr 1fr 1fr; }
+  .form-full { margin-bottom: 16px; }
+
+  @media (max-width: 540px) {
+    .form-row, .form-row.triple { grid-template-columns: 1fr; }
+  }
+
+  .lang-toggles {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+
+  .lang-toggle {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--text-dim);
+    user-select: none;
+  }
+
+  .lang-toggle input { display: none; }
+
+  .lang-pill {
+    padding: 5px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    transition: all 0.2s;
+    background: transparent;
+  }
+
+  .lang-toggle input:checked + .lang-pill {
+    background: var(--gold-dim);
+    border-color: var(--gold);
+    color: var(--gold2);
+  }
+
+  .lang-toggle:hover .lang-pill { border-color: var(--gold); color: var(--text); }
+
+  .btn {
+    width: 100%;
+    padding: 13px 20px;
+    background: linear-gradient(135deg, var(--gold) 0%, #a8832a 100%);
+    color: #0d0d0f;
+    border: none;
+    border-radius: 8px;
+    font-family: var(--sans);
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 0.03em;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn:hover { filter: brightness(1.1); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(201,168,76,0.25); }
+  .btn:active { transform: translateY(0); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  .btn-spinner {
+    display: inline-block;
+    width: 14px; height: 14px;
+    border: 2px solid rgba(0,0,0,0.3);
+    border-top-color: #0d0d0f;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    margin-right: 8px;
+    vertical-align: middle;
+    display: none;
+  }
+
+  .btn.loading .btn-spinner { display: inline-block; }
+  .btn.loading .btn-text { opacity: 0.7; }
+
+  /* Status / Error */
+  .status-bar {
+    margin-bottom: 20px;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    display: none;
+    animation: fadeIn 0.3s ease;
+  }
+
+  .status-bar.error { background: rgba(192,80,80,0.1); border: 1px solid rgba(192,80,80,0.3); color: #e07070; display: block; }
+  .status-bar.info { background: rgba(74,158,110,0.1); border: 1px solid rgba(74,158,110,0.3); color: #6dc994; display: block; }
+  .status-bar.loading-status { background: var(--bg2); border: 1px solid var(--border); color: var(--text-dim); display: block; }
+
+  /* Results */
+  .results-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    opacity: 0;
+    transition: opacity 0.4s;
+  }
+
+  .results-header.visible { opacity: 1; }
+
+  .results-count {
+    font-size: 13px;
+    color: var(--text-dim);
+    font-family: var(--sans);
+  }
+
+  .results-count strong { color: var(--gold); }
+
+  .results-list { display: flex; flex-direction: column; gap: 20px; }
+
+  /* Hadith Card */
+  .hadith-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    animation: fadeUp 0.4s ease both;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .hadith-card:hover {
+    border-color: rgba(201,168,76,0.3);
+    box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+  }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .card-ref {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+
+  .card-collection {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 2px;
+  }
+
+  .card-num {
+    font-family: var(--serif);
+    font-size: 20px;
+    color: var(--gold2);
+    font-weight: 700;
+    opacity: 0.6;
+  }
+
+  .card-body { padding: 20px; display: flex; flex-direction: column; gap: 20px; }
+
+  .lang-section { }
+
+  .lang-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .lang-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .hadith-text-ar {
+    font-family: var(--arabic-font);
+    font-size: 22px;
+    line-height: 2;
+    direction: rtl;
+    text-align: right;
+    color: #f0ead8;
+  }
+
+  .hadith-text-en, .hadith-text-fr {
+    font-family: var(--serif);
+    font-size: 15px;
+    line-height: 1.8;
+    color: var(--text);
+    font-style: italic;
+    font-weight: 400;
+  }
+
+  .hadith-text-en { font-style: normal; }
+
+  .separator {
+    width: 100%;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .no-results {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-dim);
+    font-family: var(--serif);
+    font-size: 15px;
+    font-style: italic;
+  }
+
+  .no-results span {
+    font-family: var(--arabic-font);
+    font-size: 28px;
+    display: block;
+    color: var(--gold);
+    margin-bottom: 12px;
+    opacity: 0.5;
+  }
+
+  .progress-bar {
+    width: 100%;
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    margin-top: 12px;
+    overflow: hidden;
+    display: none;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--gold), var(--gold2));
+    border-radius: 2px;
+    transition: width 0.3s ease;
+    width: 0%;
+  }
+
+  .progress-bar.visible { display: block; }
+
+  /* Pagination */
+  .pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 32px;
+    flex-wrap: wrap;
+  }
+
+  .page-btn {
+    padding: 8px 14px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    font-family: var(--sans);
+    transition: all 0.2s;
+  }
+
+  .page-btn:hover { border-color: var(--gold); color: var(--gold); }
+  .page-btn.active { background: var(--gold-dim); border-color: var(--gold); color: var(--gold2); font-weight: 700; }
+  .page-btn:disabled { opacity: 0.3; cursor: default; }
+
+  .hint {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 8px;
+    font-style: italic;
+  }
+
+  @keyframes fadeDown { from { opacity:0; transform: translateY(-16px); } to { opacity:1; transform: translateY(0); } }
+  @keyframes fadeUp { from { opacity:0; transform: translateY(14px); } to { opacity:1; transform: translateY(0); } }
+  @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <div class="header-icon">☪</div>
+    <h1>Hadith Search
+      <span class="header-arabic">البحث في الحديث</span>
+    </h1>
+    <div class="gold-line"></div>
+    <p>Search hadith by text or reference · Arabic · English · Français<br>
+    Source: fawazahmed0 Hadith API (6 major collections)</p>
+  </div>
+
+  <div class="search-panel">
+    <!-- Language toggles -->
+    <label>Display languages</label>
+    <div class="lang-toggles" style="margin-bottom:22px;">
+      <label class="lang-toggle"><input type="checkbox" id="lang-ar" checked><span class="lang-pill">عربي Arabic</span></label>
+      <label class="lang-toggle"><input type="checkbox" id="lang-en" checked><span class="lang-pill">English</span></label>
+      <label class="lang-toggle"><input type="checkbox" id="lang-fr" checked><span class="lang-pill">Français</span></label>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('reference')">By Reference</button>
+      <button class="tab" onclick="switchTab('text')">By Text Search</button>
+    </div>
+
+    <!-- Reference Tab -->
+    <div class="tab-content active" id="tab-reference">
+      <div class="form-row">
+        <div>
+          <label>Collection</label>
+          <select id="ref-collection">
+            <option value="bukhari">Sahih al-Bukhari</option>
+            <option value="muslim">Sahih Muslim</option>
+            <option value="abudawud">Sunan Abu Dawud</option>
+            <option value="tirmidhi">Jami' at-Tirmidhi</option>
+            <option value="ibnmajah">Sunan Ibn Majah</option>
+            <option value="nasai">Sunan an-Nasa'i</option>
+          </select>
+        </div>
+        <div>
+          <label>Hadith Number</label>
+          <input type="number" id="ref-number" placeholder="e.g. 1" min="1">
+        </div>
+      </div>
+      <button class="btn" id="btn-ref" onclick="searchByReference()">
+        <span class="btn-spinner"></span>
+        <span class="btn-text">Fetch Hadith</span>
+      </button>
+    </div>
+
+    <!-- Text Search Tab -->
+    <div class="tab-content" id="tab-text">
+      <div class="form-row">
+        <div>
+          <label>Collection</label>
+          <select id="text-collection">
+            <option value="bukhari">Sahih al-Bukhari</option>
+            <option value="muslim">Sahih Muslim</option>
+            <option value="abudawud">Sunan Abu Dawud</option>
+            <option value="tirmidhi">Jami' at-Tirmidhi</option>
+            <option value="ibnmajah">Sunan Ibn Majah</option>
+            <option value="nasai">Sunan an-Nasa'i</option>
+          </select>
+        </div>
+        <div>
+          <label>Search Language</label>
+          <select id="search-lang">
+            <option value="en">English</option>
+            <option value="ar">Arabic</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-full">
+        <label>Search Text</label>
+        <input type="text" id="text-query" placeholder="e.g. prayer, fasting, ربّ, صلاة..." onkeydown="if(event.key==='Enter')searchByText()">
+        <p class="hint">The first search on a collection will load it (~a few seconds). Results are cached for the session.</p>
+      </div>
+      <div id="progress-container">
+        <div class="progress-bar" id="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+      </div>
+      <button class="btn" id="btn-text" onclick="searchByText()">
+        <span class="btn-spinner"></span>
+        <span class="btn-text">Search</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Status -->
+  <div class="status-bar" id="status-bar"></div>
+
+  <!-- Results -->
+  <div class="results-header" id="results-header">
+    <div class="results-count" id="results-count"></div>
+  </div>
+  <div class="results-list" id="results-list"></div>
+  <div class="pagination" id="pagination"></div>
+
+</div>
+
+<script>
+const BASE = 'https://cdn.jsdelivr.net/gh/fawazahmed0/hadith-api@1/editions';
+
+const COLLECTIONS = {
+  bukhari:  { name: "Sahih al-Bukhari",   ar: "ara-bukhari",  en: "eng-bukhari",  fr: "fra-bukhari"  },
+  muslim:   { name: "Sahih Muslim",        ar: "ara-muslim",   en: "eng-muslim",   fr: "fra-muslim"   },
+  abudawud: { name: "Sunan Abu Dawud",     ar: "ara-abudawud", en: "eng-abudawud", fr: "fra-abudawud" },
+  tirmidhi: { name: "Jami' at-Tirmidhi",  ar: "ara-tirmidhi", en: "eng-tirmidhi", fr: "fra-tirmidhi" },
+  ibnmajah: { name: "Sunan Ibn Majah",    ar: "ara-ibnmajah", en: "eng-ibnmajah", fr: "fra-ibnmajah" },
+  nasai:    { name: "Sunan an-Nasa'i",    ar: "ara-nasai",    en: "eng-nasai",    fr: "fra-nasai"    }
+};
+
+let cache = {};
+let currentResults = [];
+let currentPage = 1;
+const PAGE_SIZE = 10;
+let activeTab = 'reference';
+
+function switchTab(tab) {
+  activeTab = tab;
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', (i===0 && tab==='reference') || (i===1 && tab==='text')));
+  document.getElementById('tab-reference').classList.toggle('active', tab === 'reference');
+  document.getElementById('tab-text').classList.toggle('active', tab === 'text');
+  clearStatus();
+}
+
+function showStatus(msg, type='info') {
+  const el = document.getElementById('status-bar');
+  el.textContent = msg;
+  el.className = 'status-bar ' + type;
+}
+
+function clearStatus() {
+  document.getElementById('status-bar').className = 'status-bar';
+  document.getElementById('status-bar').textContent = '';
+}
+
+function setLoading(btnId, state) {
+  const btn = document.getElementById(btnId);
+  btn.disabled = state;
+  btn.classList.toggle('loading', state);
+}
+
+async function fetchJSON(url) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return await res.json();
+}
+
+async function loadCollection(editionKey, progressCb) {
+  if (cache[editionKey]) return cache[editionKey];
+  const url = `${BASE}/${editionKey}.json`;
+  if (progressCb) progressCb(30);
+  const data = await fetchJSON(url);
+  if (progressCb) progressCb(100);
+  const hadiths = data.hadiths || (data.chapters ? data.chapters.flatMap(c => c.hadiths||[]) : []);
+  // Normalize to array with hadithnumber and text
+  let result = hadiths.map(h => ({
+    hadithnumber: h.hadithnumber || h.number,
+    text: h.text || h.body || ''
+  }));
+  cache[editionKey] = result;
+  return result;
+}
+
+// --- Reference Search ---
+async function searchByReference() {
+  const col = document.getElementById('ref-collection').value;
+  const num = parseInt(document.getElementById('ref-number').value);
+  if (!num || num < 1) { showStatus('Please enter a valid hadith number.', 'error'); return; }
+
+  setLoading('btn-ref', true);
+  clearStatus();
+
+  const info = COLLECTIONS[col];
+  const langs = getSelectedLangs();
+
+  try {
+    const fetches = {};
+    if (langs.ar) fetches.ar = fetchJSON(`${BASE}/${info.ar}/${num}.json`);
+    if (langs.en) fetches.en = fetchJSON(`${BASE}/${info.en}/${num}.json`);
+    if (langs.fr) fetches.fr = fetchJSON(`${BASE}/${info.fr}/${num}.json`).catch(() => null);
+
+    const results = {};
+    for (const [k, p] of Object.entries(fetches)) {
+      try { results[k] = await p; } catch(e) { results[k] = null; }
+    }
+
+    const texts = {};
+    if (results.ar?.hadiths?.[0]) texts.ar = results.ar.hadiths[0].text;
+    if (results.en?.hadiths?.[0]) texts.en = results.en.hadiths[0].text;
+    if (results.fr?.hadiths?.[0]) texts.fr = results.fr.hadiths[0].text;
+
+    if (!Object.values(texts).some(Boolean)) {
+      showStatus(`Hadith #${num} not found in this collection.`, 'error');
+      setLoading('btn-ref', false);
+      return;
+    }
+
+    displayResults([{ hadithnumber: num, texts, collection: info.name, collectionKey: col }]);
+
+  } catch(e) {
+    showStatus(`Error fetching hadith: ${e.message}`, 'error');
+  }
+  setLoading('btn-ref', false);
+}
+
+// --- Text Search ---
+async function searchByText() {
+  const col = document.getElementById('text-collection').value;
+  const query = document.getElementById('text-query').value.trim().toLowerCase();
+  const searchLang = document.getElementById('search-lang').value;
+
+  if (!query) { showStatus('Please enter a search term.', 'error'); return; }
+
+  setLoading('btn-text', true);
+  clearStatus();
+
+  const info = COLLECTIONS[col];
+  const editionKey = searchLang === 'ar' ? info.ar : info.en;
+  const langs = getSelectedLangs();
+
+  // Show progress
+  const progressBar = document.getElementById('progress-bar');
+  const progressFill = document.getElementById('progress-fill');
+  progressBar.classList.add('visible');
+  progressFill.style.width = '10%';
+
+  try {
+    showStatus(`Loading ${info.name}... (first load may take a moment)`, 'loading-status');
+
+    const hadiths = await loadCollection(editionKey, (p) => {
+      progressFill.style.width = p + '%';
+    });
+
+    progressFill.style.width = '100%';
+    setTimeout(() => { progressBar.classList.remove('visible'); progressFill.style.width = '0%'; }, 500);
+
+    clearStatus();
+
+    const matches = hadiths.filter(h => h.text && h.text.toLowerCase().includes(query));
+
+    if (matches.length === 0) {
+      showStatus(`No hadiths found matching "${query}" in ${info.name}.`, 'error');
+      setLoading('btn-text', false);
+      return;
+    }
+
+    // Now fetch all 3 languages for matched numbers (batch, up to 20 for display)
+    const MAX_FETCH = 50;
+    const toFetch = matches.slice(0, MAX_FETCH);
+
+    showStatus(`Found ${matches.length} result${matches.length>1?'s':''}. Loading translations...`, 'loading-status');
+
+    const resultItems = [];
+    for (const h of toFetch) {
+      const texts = {};
+      // We already have one language
+      if (searchLang === 'ar') {
+        texts.ar = h.text;
+      } else {
+        texts.en = h.text;
+      }
+
+      // Fetch other langs
+      const otherFetches = [];
+      if (langs.ar && searchLang !== 'ar') otherFetches.push(['ar', fetchJSON(`${BASE}/${info.ar}/${h.hadithnumber}.json`).catch(()=>null)]);
+      if (langs.en && searchLang !== 'en') otherFetches.push(['en', fetchJSON(`${BASE}/${info.en}/${h.hadithnumber}.json`).catch(()=>null)]);
+      if (langs.fr) otherFetches.push(['fr', fetchJSON(`${BASE}/${info.fr}/${h.hadithnumber}.json`).catch(()=>null)]);
+
+      for (const [lang, p] of otherFetches) {
+        const r = await p;
+        if (r?.hadiths?.[0]) texts[lang] = r.hadiths[0].text;
+      }
+
+      resultItems.push({ hadithnumber: h.hadithnumber, texts, collection: info.name, collectionKey: col, query });
+    }
+
+    clearStatus();
+    if (matches.length > MAX_FETCH) {
+      showStatus(`Showing first ${MAX_FETCH} of ${matches.length} results. Refine your search for more specific results.`, 'info');
+    }
+
+    displayResults(resultItems);
+
+  } catch(e) {
+    progressBar.classList.remove('visible');
+    showStatus(`Error: ${e.message}`, 'error');
+  }
+  setLoading('btn-text', false);
+}
+
+function getSelectedLangs() {
+  return {
+    ar: document.getElementById('lang-ar').checked,
+    en: document.getElementById('lang-en').checked,
+    fr: document.getElementById('lang-fr').checked
+  };
+}
+
+function displayResults(items) {
+  currentResults = items;
+  currentPage = 1;
+  renderPage();
+}
+
+function renderPage() {
+  const list = document.getElementById('results-list');
+  const header = document.getElementById('results-header');
+  const countEl = document.getElementById('results-count');
+
+  const start = (currentPage - 1) * PAGE_SIZE;
+  const pageItems = currentResults.slice(start, start + PAGE_SIZE);
+  const langs = getSelectedLangs();
+
+  header.classList.add('visible');
+  countEl.innerHTML = `<strong>${currentResults.length}</strong> result${currentResults.length !== 1 ? 's' : ''} found`;
+
+  list.innerHTML = '';
+  if (pageItems.length === 0) {
+    list.innerHTML = '<div class="no-results"><span>ما وجد</span>No results found.</div>';
+    return;
+  }
+
+  pageItems.forEach((item, i) => {
+    const card = document.createElement('div');
+    card.className = 'hadith-card';
+    card.style.animationDelay = (i * 0.07) + 's';
+
+    let bodyHTML = '';
+
+    if (langs.ar && item.texts.ar) {
+      bodyHTML += `
+        <div class="lang-section">
+          <div class="lang-label">عربي — Arabic</div>
+          <div class="hadith-text-ar">${highlight(item.texts.ar, item.query, 'ar')}</div>
+        </div>`;
+    }
+
+    if (langs.ar && item.texts.ar && (langs.en && item.texts.en || langs.fr && item.texts.fr)) {
+      bodyHTML += '<div class="separator"></div>';
+    }
+
+    if (langs.en && item.texts.en) {
+      bodyHTML += `
+        <div class="lang-section">
+          <div class="lang-label">English</div>
+          <div class="hadith-text-en">${highlight(item.texts.en, item.query, 'en')}</div>
+        </div>`;
+    }
+
+    if (langs.en && item.texts.en && langs.fr && item.texts.fr) {
+      bodyHTML += '<div class="separator"></div>';
+    }
+
+    if (langs.fr && item.texts.fr) {
+      bodyHTML += `
+        <div class="lang-section">
+          <div class="lang-label">Français</div>
+          <div class="hadith-text-fr">${highlight(item.texts.fr, item.query, 'fr')}</div>
+        </div>`;
+    }
+
+    if (!langs.ar && !langs.en && !langs.fr || Object.values(item.texts).every(v => !v)) {
+      bodyHTML = '<div style="color:var(--text-dim);font-size:13px;font-style:italic;">No text available for selected languages.</div>';
+    }
+
+    card.innerHTML = `
+      <div class="card-header">
+        <div>
+          <div class="card-ref">${item.collection}</div>
+          <div class="card-collection">Hadith #${item.hadithnumber}</div>
+        </div>
+        <div class="card-num">#${item.hadithnumber}</div>
+      </div>
+      <div class="card-body">${bodyHTML}</div>
+    `;
+    list.appendChild(card);
+  });
+
+  renderPagination();
+}
+
+function highlight(text, query, lang) {
+  if (!query || !text) return escapeHTML(text || '');
+  const escaped = escapeHTML(text);
+  const escapedQuery = escapeRegex(query);
+  return escaped.replace(new RegExp(escapedQuery, 'gi'), m =>
+    `<mark style="background:rgba(201,168,76,0.2);color:var(--gold2);border-radius:2px;padding:0 2px;">${m}</mark>`
+  );
+}
+
+function escapeHTML(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function escapeRegex(s) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function renderPagination() {
+  const pag = document.getElementById('pagination');
+  const total = Math.ceil(currentResults.length / PAGE_SIZE);
+  pag.innerHTML = '';
+
+  if (total <= 1) return;
+
+  const prev = document.createElement('button');
+  prev.className = 'page-btn';
+  prev.textContent = '← Prev';
+  prev.disabled = currentPage === 1;
+  prev.onclick = () => { currentPage--; renderPage(); window.scrollTo({top:0,behavior:'smooth'}); };
+  pag.appendChild(prev);
+
+  const maxVisible = 5;
+  let start = Math.max(1, currentPage - 2);
+  let end = Math.min(total, start + maxVisible - 1);
+  if (end - start < maxVisible - 1) start = Math.max(1, end - maxVisible + 1);
+
+  for (let i = start; i <= end; i++) {
+    const btn = document.createElement('button');
+    btn.className = 'page-btn' + (i === currentPage ? ' active' : '');
+    btn.textContent = i;
+    const pg = i;
+    btn.onclick = () => { currentPage = pg; renderPage(); window.scrollTo({top:0,behavior:'smooth'}); };
+    pag.appendChild(btn);
+  }
+
+  const next = document.createElement('button');
+  next.className = 'page-btn';
+  next.textContent = 'Next →';
+  next.disabled = currentPage === total;
+  next.onclick = () => { currentPage++; renderPage(); window.scrollTo({top:0,behavior:'smooth'}); };
+  pag.appendChild(next);
+}
+</script>
+</body>
+</html>
